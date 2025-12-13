@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Shader Graphs_CustomRenderTex
+  m_Shader: {fileID: -6465566751694194690, guid: b753a5fffede20e43a3ea3b4c6c661c1, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _CustomTex:
+        m_Texture: {fileID: 2800000, guid: 033f9d9e4bbc3a642b0252ee5721c34d, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DistortTex:
+        m_Texture: {fileID: 2800000, guid: 504cfc0cff35bc24f99f16aa7b744f65, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GradientTexture2D:
+        m_Texture: {fileID: 2800000, guid: 71e88fd14f5ed9f4fa8c18583a6bf107, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _DistortSCale: 4
+    - _DistortSpeed: -0.01
+    - _Distortion: -0.05
+    - _PrimaryCutOff: 0.757
+    - _SecondStrength: 0.499
+    - _SecondaryCutOff: 0.348
+    - _Smoothness: 0.454
+    - _Speed: -0.01
+    - _TotalStreghth: 0.833
+    m_Colors:
+    - _DistorScale: {r: 3, g: 3, b: 0, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1
