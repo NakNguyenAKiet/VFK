@@ -7,3 +7,6 @@ TonadoVFX/Assets/Blender/textures/dark_wood_nor_gl_4k.exr filter=lfs diff=lfs me
 TonadoVFX/Assets/Blender/textures/dark_wood_disp_4k.png filter=lfs diff=lfs merge=lfs -text
 TonadoVFX/Assets/Blender/textures/dark_wood_rough_4k.exr filter=lfs diff=lfs merge=lfs -text
 TonadoVFX/Assets/Blender/textures/dark_wood_diff_4k.jpg filter=lfs diff=lfs merge=lfs -text
+*.jpg filter=lfs diff=lfs merge=lfs -text
+*.png filter=lfs diff=lfs merge=lfs -text
+*.exr filter=lfs diff=lfs merge=lfs -text

@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 1920
     height: 989
   m_ShowMode: 4
-  m_Title: Inspector
+  m_Title: Project
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -300,8 +300,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "PoitLightCustomRenderTex 1\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 498
-    y: 19
+    x: 497
+    y: 73
     width: 710
     height: 918
   m_SerializedDataModeController:
@@ -1799,7 +1799,7 @@ MonoBehaviour:
   m_Pos:
     serializedVersion: 2
     x: 0
-    y: 19
+    y: 73
     width: 496
     height: 918
   m_SerializedDataModeController:
@@ -2534,8 +2534,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Hierarchy\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 1
-    y: 19
+    x: 1209
+    y: 73
     width: 362
     height: 392
   m_SerializedDataModeController:
@@ -2600,8 +2600,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Project\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 1
-    y: 432
+    x: 1209
+    y: 486
     width: 362
     height: 505
   m_SerializedDataModeController:
@@ -2645,7 +2645,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 80ad0000
     m_LastClickedID: 44416
-    m_ExpandedIDs: 000000007aad00007cad00007ead000080ad0000
+    m_ExpandedIDs: 000000007aad00007cad00007ead000080ad000000ca9a3bffffff7f
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -2789,8 +2789,8 @@ MonoBehaviour:
     m_TextWithWhitespace: "Inspector\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 1574
-    y: 19
+    x: 1573
+    y: 73
     width: 346
     height: 918
   m_SerializedDataModeController:
