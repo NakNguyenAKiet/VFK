@@ -3,3 +3,7 @@ TonadoVFX/Assets/_Shader/**/*.png filter=lfs diff=lfs merge=lfs -text
 TonadoVFX/Assets/TextMesh[[:space:]]Pro/Resources/Fonts[[:space:]]&[[:space:]]Materials/*.asset filter=lfs diff=lfs merge=lfs -text
 TonadoVFX/Assets/Unity.VisualScripting.Generated/**/*.asset filter=lfs diff=lfs merge=lfs -text
 TonadoVFX/Assets/Unity.VisualScripting.Generated/**/*.db filter=lfs diff=lfs merge=lfs -text
+TonadoVFX/Assets/Blender/textures/dark_wood_nor_gl_4k.exr filter=lfs diff=lfs merge=lfs -text
+TonadoVFX/Assets/Blender/textures/dark_wood_disp_4k.png filter=lfs diff=lfs merge=lfs -text
+TonadoVFX/Assets/Blender/textures/dark_wood_rough_4k.exr filter=lfs diff=lfs merge=lfs -text
+TonadoVFX/Assets/Blender/textures/dark_wood_diff_4k.jpg filter=lfs diff=lfs merge=lfs -text
