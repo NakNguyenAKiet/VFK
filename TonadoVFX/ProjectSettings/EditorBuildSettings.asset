@@ -8,5 +8,6 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Tonado/VFX_Scene.unity
     guid: 3f41c99520aca454892ca08deb2c17f6
-  m_configObjects: {}
+  m_configObjects:
+    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 9cc7d0563d037304bb1613dcfe21e6ca, type: 3}
   m_UseUCBPForAssetBundles: 0
