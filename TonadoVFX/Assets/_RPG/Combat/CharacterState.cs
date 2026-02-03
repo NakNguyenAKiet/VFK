@@ -20,7 +20,6 @@ public class CharacterStats
     [Header("Defensive Stats")]
     public float armor = 5f;
     public float magicResist = 5f;
-    public float dodgeChance = 5f;
     
     [Header("Movement")]
     public float moveSpeed = 5f;

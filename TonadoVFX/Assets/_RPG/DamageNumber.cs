@@ -3,13 +3,19 @@ using UnityEngine;
 
 public class DamageNumber : MonoBehaviour
 {
+    #region Components
     private TextMeshPro textMesh;
+    #endregion
+
+    #region State
     private float displayDuration;
     private float spawnTime;
     private Vector3 startPosition;
     private float floatSpeed = 2f;
     private bool isCritical;
-    
+    #endregion
+
+    #region Lifecycle
     private void Awake()
     {
         textMesh = GetComponent<TextMeshPro>();
@@ -19,32 +25,7 @@ public class DamageNumber : MonoBehaviour
             textMesh.alignment = TextAlignmentOptions.Center;
         }
     }
-    
-    public void Show(Vector3 position, int damage, Color color, float fontSize, float duration, bool critical, string prefix = "")
-    {
-        transform.position = position;
-        startPosition = position;
-        spawnTime = Time.time;
-        displayDuration = duration;
-        isCritical = critical;
-        floatSpeed = DamageNumberManager.Instance != null ? 2f : floatSpeed;
-        
-        textMesh.text = prefix + damage.ToString();
-        textMesh.color = color;
-        textMesh.fontSize = fontSize;
-        
-        if (critical)
-        {
-            textMesh.fontStyle = FontStyles.Bold;
-        }
-        else
-        {
-            textMesh.fontStyle = FontStyles.Normal;
-        }
-        
-        gameObject.SetActive(true);
-    }
-    
+
     private void Update()
     {
         if (!gameObject.activeSelf) return;
@@ -73,4 +54,32 @@ public class DamageNumber : MonoBehaviour
             DamageNumberManager.Instance?.ReturnDamageNumber(this);
         }
     }
+    #endregion
+
+    #region Public Methods
+    public void Show(Vector3 position, int damage, Color color, float fontSize, float duration, bool critical, string prefix = "")
+    {
+        transform.position = position;
+        startPosition = position;
+        spawnTime = Time.time;
+        displayDuration = duration;
+        isCritical = critical;
+        floatSpeed = DamageNumberManager.Instance != null ? 2f : floatSpeed;
+        
+        textMesh.text = prefix + damage.ToString();
+        textMesh.color = color;
+        textMesh.fontSize = fontSize;
+        
+        if (critical)
+        {
+            textMesh.fontStyle = FontStyles.Bold;
+        }
+        else
+        {
+            textMesh.fontStyle = FontStyles.Normal;
+        }
+        
+        gameObject.SetActive(true);
+    }
+    #endregion
 }

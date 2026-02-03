@@ -2,17 +2,23 @@ using UnityEngine;
 
 public class EnemyCombat : CombatEntity
 {
+    #region Settings
     [Header("Enemy Specific")]
     [SerializeField] private float detectionRange = 10f;
     [SerializeField] private float attackCooldown = 2f;
     [SerializeField] private EnemyType enemyType;
-    
-    private Transform target;
+    #endregion
+
+    #region Components
     private EnemyAI aiController;
+    #endregion
+
+    #region Combat State
+    private Transform target;
     private float nextAttackTime;
-    
-    public override float AttackRange => enemyType == EnemyType.Melee ? 2f : 8f;
-    
+    #endregion
+
+    #region Enemy Type Enum
     public enum EnemyType
     {
         Melee,
@@ -21,7 +27,13 @@ public class EnemyCombat : CombatEntity
         Elite,
         Boss
     }
-    
+    #endregion
+
+    #region Properties
+    public override float AttackRange => enemyType == EnemyType.Melee ? 2f : 8f;
+    #endregion
+
+    #region Lifecycle
     protected override void Awake()
     {
         base.Awake();
@@ -51,7 +63,9 @@ public class EnemyCombat : CombatEntity
             }
         }
     }
-    
+    #endregion
+
+    #region Target Detection
     private void FindTarget()
     {
         // Tìm player trong range
@@ -67,7 +81,9 @@ public class EnemyCombat : CombatEntity
             }
         }
     }
-    
+    #endregion
+
+    #region Attack Handling
     private void TryAttackTarget()
     {
         if (!CanAttack()) return;
@@ -91,12 +107,6 @@ public class EnemyCombat : CombatEntity
         
         // Animation
         animator.SetTrigger("Attack");
-        
-        if (enemyType == EnemyType.Ranged)
-        {
-            // Shoot projectile
-            ShootProjectile(target);
-        }
     }
     
     // Animation Event cho melee attack
@@ -125,32 +135,19 @@ public class EnemyCombat : CombatEntity
         
         isAttacking = false;
     }
-    
-    private void ShootProjectile(IDamageable target)
-    {
-        // Spawn projectile
-        GameObject projectile = ProjectilePool.Instance.Get();
-        projectile.transform.position = transform.position + Vector3.up * 1.5f;
-        
-        Projectile proj = projectile.GetComponent<Projectile>();
-        proj.Initialize(
-            target.transform,
-            AttackDamage,
-            gameObject,
-            () => isAttacking = false
-        );
-    }
-    
+    #endregion
+
+    #region Death
     public override void Die()
     {
         base.Die();
         
-        
-        
         // Destroy sau animation
         Destroy(gameObject, 3f);
     }
-    
+    #endregion
+
+    #region Stat Modifiers
     private void ApplyEnemyTypeModifiers()
     {
         switch (enemyType)
@@ -175,7 +172,7 @@ public class EnemyCombat : CombatEntity
         
         currentHealth = MaxHealth;
     }
-    
+
     private int GetExpReward()
     {
         return enemyType switch
@@ -188,7 +185,9 @@ public class EnemyCombat : CombatEntity
             _ => 50
         };
     }
-    
+    #endregion
+
+    #region Debug
     private void OnDrawGizmosSelected()
     {
         // Visualize ranges
@@ -198,4 +197,5 @@ public class EnemyCombat : CombatEntity
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, AttackRange);
     }
+    #endregion
 }

@@ -714,6 +714,7 @@
     "m_OutputNode": {
         "m_Id": ""
     },
+    "m_SubDatas": [],
     "m_ActiveTargets": [
         {
             "m_Id": "8cec5f420e614ca0a2c0fafb12da3869"
@@ -1803,8 +1804,8 @@
     "m_ObjectId": "41db22c80af34554bccc750ea08c7344",
     "m_Title": "Movement1",
     "m_Position": {
-        "x": 10.0,
-        "y": 10.0
+        "x": 323.0,
+        "y": -277.0
     }
 }
 
@@ -2817,8 +2818,8 @@
     "m_ObjectId": "82cc6d2faeaf4809bdcdadbc2c44cd06",
     "m_Title": "Movement2",
     "m_Position": {
-        "x": 402.0001220703125,
-        "y": 850.0001220703125
+        "x": 413.0,
+        "y": 850.0
     }
 }
 
@@ -3491,8 +3492,8 @@
     "m_ObjectId": "b3f5ad6eaf4f418cbb61f829ef6e4653",
     "m_Title": "Stretch and Offset color",
     "m_Position": {
-        "x": 10.0,
-        "y": 10.0
+        "x": 2361.0,
+        "y": 107.0
     }
 }
 
@@ -3503,7 +3504,7 @@
     "m_Title": "Distortion",
     "m_Position": {
         "x": 427.0,
-        "y": 279.99993896484377
+        "y": 280.0
     }
 }
 

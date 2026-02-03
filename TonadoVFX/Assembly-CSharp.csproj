@@ -55,19 +55,22 @@
     <Compile Include="Assets\Playfab\PlayFabManager1.cs" />
     <Compile Include="Assets\_RPG\PlayerInputActions.cs" />
     <Compile Include="Assets\Playfab\Authentication\PlayFabAuthenticateServices.cs" />
-    <Compile Include="Assets\_RPG\Projectile.cs" />
+    <Compile Include="Assets\_RPG\Helper\FaceToCamera.cs" />
     <Compile Include="Assets\_RPG\Combat\CombatEntity.cs" />
     <Compile Include="Assets\_RPG\PlayerInput.cs" />
     <Compile Include="Assets\Playfab\PlayfabKeys.cs" />
     <Compile Include="Assets\_RPG\Combat\PlayerCombat.cs" />
+    <Compile Include="Assets\_RPG\SkillManager.cs" />
     <Compile Include="Assets\Playfab\PlayfabManager.cs" />
+    <Compile Include="Assets\_RPG\ThirdPersonCamera.cs" />
     <Compile Include="Assets\_RPG\VFXManager.cs" />
     <Compile Include="Assets\_RPG\Combat\CharacterState.cs" />
     <Compile Include="Assets\_RPG\EnemyAI.cs" />
+    <Compile Include="Assets\_RPG\CombatDebugVisualizer.cs" />
     <Compile Include="Assets\_RPG\DamageNumberManager.cs" />
     <Compile Include="Assets\_RPG\Combat\EnemyCombat.cs" />
-    <Compile Include="Assets\_RPG\ProjectilePool.cs" />
     <Compile Include="Assets\_RPG\Models.cs" />
+    <Compile Include="Assets\_RPG\PlayerController.cs" />
     <Compile Include="Assets\_RPG\DamageNumber.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -1088,6 +1091,10 @@
       <HintPath>Library\ScriptAssemblies\Unity.Rider.Editor.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.AI.Navigation">
+      <HintPath>Library\ScriptAssemblies\Unity.AI.Navigation.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.RenderPipeline.Universal.ShaderLibrary">
       <HintPath>Library\ScriptAssemblies\Unity.RenderPipeline.Universal.ShaderLibrary.dll</HintPath>
       <Private>False</Private>
@@ -1212,6 +1219,10 @@
       <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.ShaderGraph.ShaderGraphLibrary.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.AI.Navigation.Updater">
+      <HintPath>Library\ScriptAssemblies\Unity.AI.Navigation.Updater.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.TestTools.CodeCoverage.Editor.OpenCover.Mono.Reflection">
       <HintPath>Library\ScriptAssemblies\Unity.TestTools.CodeCoverage.Editor.OpenCover.Mono.Reflection.dll</HintPath>
       <Private>False</Private>
@@ -1244,6 +1255,10 @@
       <HintPath>Library\ScriptAssemblies\Unity.Mathematics.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Unity.AI.Navigation.Editor">
+      <HintPath>Library\ScriptAssemblies\Unity.AI.Navigation.Editor.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Unity.RenderPipelines.Core.Editor">
       <HintPath>Library\ScriptAssemblies\Unity.RenderPipelines.Core.Editor.dll</HintPath>
       <Private>False</Private>
@@ -1254,6 +1269,10 @@
     </Reference>
     <Reference Include="Unity.VisualScripting.State">
       <HintPath>Library\ScriptAssemblies\Unity.VisualScripting.State.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Unity.AI.Navigation.Editor.ConversionSystem">
+      <HintPath>Library\ScriptAssemblies\Unity.AI.Navigation.Editor.ConversionSystem.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="UniTask.Addressables">

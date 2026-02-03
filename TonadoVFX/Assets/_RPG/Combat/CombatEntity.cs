@@ -3,38 +3,48 @@ using UnityEngine;
 
 public abstract class CombatEntity : MonoBehaviour, IDamageable, IAttacker
 {
+    #region Settings
     [SerializeField] protected CharacterStats baseStats;
-    protected CharacterStats currentStats;
+    #endregion
+
+    #region Combat State
     protected float currentHealth;
     protected float currentMana;
     protected bool isDead = false;
-    
-    // Combat state
     protected bool isAttacking = false;
     protected bool isInvulnerable = false;
     protected float lastAttackTime;
-    
-    // Components
+    #endregion
+
+    #region Current Stats
+    protected CharacterStats currentStats;
+    #endregion
+
+    #region Components
     protected Animator animator;
     protected Rigidbody rb;
     protected CapsuleCollider capsuleCollider;
-    
-    // Events
+    #endregion
+
+    #region Events
     public event System.Action<DamageInfo> OnDamageReceived;
     public event System.Action OnDeath;
     public event System.Action<IDamageable> OnAttackPerformed;
-    
-    // Properties
+    #endregion
+
+    #region Properties
     public float CurrentHealth => currentHealth;
     public float MaxHealth => currentStats.GetFinalStat(StatType.MaxHealth);
     public float AttackDamage => currentStats.GetFinalStat(StatType.AttackDamage);
     public float AttackSpeed => currentStats.GetFinalStat(StatType.AttackSpeed);
     public abstract float AttackRange { get; }
     public bool IsDead => isDead;
-    
+    #endregion
+
+    #region Lifecycle
     protected virtual void Awake()
     {
-        animator = GetComponent<Animator>();
+        animator = GetComponentInChildren<Animator>();
         rb = GetComponent<Rigidbody>();
         capsuleCollider = GetComponent<CapsuleCollider>();
         
@@ -51,7 +61,9 @@ public abstract class CombatEntity : MonoBehaviour, IDamageable, IAttacker
             RegenerateResources();
         }
     }
-    
+    #endregion
+
+    #region Damage Handling
     public virtual void TakeDamage(DamageInfo damageInfo)
     {
         if (isDead || isInvulnerable) return;
@@ -78,7 +90,7 @@ public abstract class CombatEntity : MonoBehaviour, IDamageable, IAttacker
             Die();
         }
     }
-    
+
     protected virtual float CalculateDamage(DamageInfo damageInfo)
     {
         float damage = 0f;
@@ -109,9 +121,20 @@ public abstract class CombatEntity : MonoBehaviour, IDamageable, IAttacker
         
         return damage;
     }
-    
+    #endregion
+
+    #region Attack
     public abstract void PerformAttack(IDamageable target);
     
+    protected bool CanAttack()
+    {
+        return !isDead && 
+               !isAttacking && 
+               Time.time >= lastAttackTime + (1f / AttackSpeed);
+    }
+    #endregion
+
+    #region Death
     public virtual void Die()
     {
         if (isDead) return;
@@ -125,7 +148,9 @@ public abstract class CombatEntity : MonoBehaviour, IDamageable, IAttacker
         enabled = false;
         capsuleCollider.enabled = false;
     }
-    
+    #endregion
+
+    #region Resource Management
     protected virtual void RegenerateResources()
     {
         if (currentHealth < MaxHealth)
@@ -140,14 +165,9 @@ public abstract class CombatEntity : MonoBehaviour, IDamageable, IAttacker
             currentMana = Mathf.Min(currentMana, currentStats.maxMana);
         }
     }
-    
-    protected bool CanAttack()
-    {
-        return !isDead && 
-               !isAttacking && 
-               Time.time >= lastAttackTime + (1f / AttackSpeed);
-    }
-    
+    #endregion
+
+    #region VFX & Audio
     protected virtual void ShowDamageNumber(float damage, bool isCritical)
     {
         // Implement damage number popup
@@ -163,7 +183,9 @@ public abstract class CombatEntity : MonoBehaviour, IDamageable, IAttacker
         // Spawn hit VFX
         VFXManager.Instance?.PlayHitEffect(hitPoint);
     }
-    
+    #endregion
+
+    #region Utilities
     private CharacterStats CloneStats(CharacterStats original)
     {
         // Deep clone implementation
@@ -171,4 +193,5 @@ public abstract class CombatEntity : MonoBehaviour, IDamageable, IAttacker
         // Copy all fields...
         return clone;
     }
+    #endregion
 }

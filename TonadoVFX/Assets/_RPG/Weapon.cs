@@ -3,12 +3,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "New Weapon", menuName = "ARPG/Weapon")]
 public class Weapon : MonoBehaviour
 {
-    public string weaponName;
-    public WeaponType weaponType;
-    public float attackRange = 2f;
-    public float damageMultiplier = 1f;
-    public float attackSpeedMultiplier = 1f;
-    
+    #region Weapon Type Enum
     public enum WeaponType
     {
         Sword,
@@ -17,4 +12,13 @@ public class Weapon : MonoBehaviour
         Bow,
         Staff
     }
+    #endregion
+
+    #region Settings
+    public string weaponName;
+    public WeaponType weaponType;
+    public float attackRange = 2f;
+    public float damageMultiplier = 1f;
+    public float attackSpeedMultiplier = 1f;
+    #endregion
 }

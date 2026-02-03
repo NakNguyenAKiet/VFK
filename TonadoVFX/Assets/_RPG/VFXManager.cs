@@ -3,8 +3,11 @@ using System.Collections.Generic;
 
 public class VFXManager : MonoBehaviour
 {
+    #region Singleton
     public static VFXManager Instance { get; private set; }
-    
+    #endregion
+
+    #region Data Structure
     [System.Serializable]
     public class VFXData
     {
@@ -12,7 +15,9 @@ public class VFXManager : MonoBehaviour
         public GameObject prefab;
         public int poolSize = 10;
     }
-    
+    #endregion
+
+    #region Settings
     [Header("VFX Prefabs")]
     [SerializeField] private VFXData[] vfxPrefabs;
     
@@ -22,10 +27,14 @@ public class VFXManager : MonoBehaviour
     [SerializeField] private GameObject bloodEffect;
     [SerializeField] private GameObject healEffect;
     [SerializeField] private GameObject levelUpEffect;
-    
+    #endregion
+
+    #region Object Pooling
     private Dictionary<string, Queue<GameObject>> vfxPools = new Dictionary<string, Queue<GameObject>>();
     private Dictionary<string, GameObject> vfxPrefabDict = new Dictionary<string, GameObject>();
-    
+    #endregion
+
+    #region Lifecycle
     private void Awake()
     {
         if (Instance == null)
@@ -40,7 +49,9 @@ public class VFXManager : MonoBehaviour
         
         InitializePools();
     }
-    
+    #endregion
+
+    #region Pool Management
     private void InitializePools()
     {
         // Pool default effects
@@ -79,7 +90,63 @@ public class VFXManager : MonoBehaviour
         
         vfxPools[poolName] = pool;
     }
-    
+
+    private GameObject GetFromPool(string poolName)
+    {
+        if (!vfxPools.ContainsKey(poolName))
+        {
+            Debug.LogWarning($"Pool '{poolName}' does not exist!");
+            return null;
+        }
+        
+        Queue<GameObject> pool = vfxPools[poolName];
+        
+        if (pool.Count == 0)
+        {
+            // Expand pool if empty
+            GameObject prefab = vfxPrefabDict[poolName];
+            GameObject newObj = Instantiate(prefab, transform);
+            newObj.SetActive(false);
+            return newObj;
+        }
+        
+        return pool.Dequeue();
+    }
+
+    private void ReturnToPool(string poolName, GameObject obj)
+    {
+        if (!vfxPools.ContainsKey(poolName))
+        {
+            Destroy(obj);
+            return;
+        }
+        
+        obj.SetActive(false);
+        obj.transform.parent = transform;
+        
+        // Stop all particle systems
+        ParticleSystem[] particleSystems = obj.GetComponentsInChildren<ParticleSystem>();
+        foreach (ParticleSystem ps in particleSystems)
+        {
+            ps.Stop();
+            ps.Clear();
+        }
+        
+        vfxPools[poolName].Enqueue(obj);
+    }
+
+    private System.Collections.IEnumerator ReturnToPoolAfterDelay(string poolName, GameObject obj, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        
+        if (obj != null && obj.activeSelf)
+        {
+            ReturnToPool(poolName, obj);
+        }
+    }
+    #endregion
+
+    #region Effect Playback
     public GameObject PlayEffect(string effectName, Vector3 position, Quaternion rotation = default, Transform parent = null, float duration = 2f)
     {
         if (rotation == default)
@@ -111,7 +178,9 @@ public class VFXManager : MonoBehaviour
         
         return effect;
     }
-    
+    #endregion
+
+    #region Combat Effects
     public void PlayHitEffect(Vector3 position, bool isCritical = false)
     {
         string effectName = isCritical ? "CriticalHit" : "DefaultHit";
@@ -123,7 +192,9 @@ public class VFXManager : MonoBehaviour
         Quaternion rotation = Quaternion.LookRotation(hitDirection);
         PlayEffect("Blood", position, rotation, null, 1.5f);
     }
-    
+    #endregion
+
+    #region Special Effects
     public void PlayHealEffect(Vector3 position, Transform parent = null)
     {
         PlayEffect("Heal", position, Quaternion.identity, parent, 1f);
@@ -138,62 +209,9 @@ public class VFXManager : MonoBehaviour
     {
         PlayEffect(skillName, position, rotation, null, 3f);
     }
-    
-    private GameObject GetFromPool(string poolName)
-    {
-        if (!vfxPools.ContainsKey(poolName))
-        {
-            Debug.LogWarning($"Pool '{poolName}' does not exist!");
-            return null;
-        }
-        
-        Queue<GameObject> pool = vfxPools[poolName];
-        
-        if (pool.Count == 0)
-        {
-            // Expand pool if empty
-            GameObject prefab = vfxPrefabDict[poolName];
-            GameObject newObj = Instantiate(prefab, transform);
-            newObj.SetActive(false);
-            return newObj;
-        }
-        
-        return pool.Dequeue();
-    }
-    
-    private void ReturnToPool(string poolName, GameObject obj)
-    {
-        if (!vfxPools.ContainsKey(poolName))
-        {
-            Destroy(obj);
-            return;
-        }
-        
-        obj.SetActive(false);
-        obj.transform.parent = transform;
-        
-        // Stop all particle systems
-        ParticleSystem[] particleSystems = obj.GetComponentsInChildren<ParticleSystem>();
-        foreach (ParticleSystem ps in particleSystems)
-        {
-            ps.Stop();
-            ps.Clear();
-        }
-        
-        vfxPools[poolName].Enqueue(obj);
-    }
-    
-    private System.Collections.IEnumerator ReturnToPoolAfterDelay(string poolName, GameObject obj, float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        
-        if (obj != null && obj.activeSelf)
-        {
-            ReturnToPool(poolName, obj);
-        }
-    }
-    
-    // Trail effects for moving objects
+    #endregion
+
+    #region Trail Effects
     public GameObject AttachTrailEffect(Transform target, string effectName)
     {
         GameObject trail = GetFromPool(effectName);
@@ -215,4 +233,5 @@ public class VFXManager : MonoBehaviour
             StartCoroutine(ReturnToPoolAfterDelay(effectName, trail, 2f));
         }
     }
+    #endregion
 }

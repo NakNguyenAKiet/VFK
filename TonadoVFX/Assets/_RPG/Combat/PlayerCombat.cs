@@ -2,27 +2,46 @@ using UnityEngine;
 
 public class PlayerCombat : CombatEntity
 {
+    #region Settings
     [Header("Player Specific")]
     [SerializeField] private Transform weaponSocket;
     [SerializeField] private LayerMask enemyLayer;
     [SerializeField] private float comboResetTime = 1f;
-    
+    [SerializeField] private bool canMoveWhileAttacking = false;
+    #endregion
+
+    #region Components
     private PlayerInput playerInput;
+    private PlayerController playerController;
+    #endregion
+
+    #region Combat State
     private int currentComboStep = 0;
     private float lastComboTime;
     private Weapon currentWeapon;
-    
+    #endregion
+
+    #region Animation Parameters
+    private readonly int comboStepHash = Animator.StringToHash("ComboStep");
+    private readonly int attackHash = Animator.StringToHash("Attack");
+    #endregion
+
+    #region Properties
     public override float AttackRange => currentWeapon != null ? currentWeapon.attackRange : 2f;
-    
+    public bool IsAttacking => isAttacking;
+    #endregion
+
+    #region Lifecycle
     protected override void Awake()
     {
         base.Awake();
         playerInput = GetComponent<PlayerInput>();
+        playerController = GetComponent<PlayerController>();
     }
     
     private void Start()
     {
-        // Setup input
+        // Setup input events
         if (playerInput != null)
         {
             playerInput.OnAttackPressed += HandleAttackInput;
@@ -41,7 +60,9 @@ public class PlayerCombat : CombatEntity
             playerInput.OnAttackPressed -= HandleAttackInput;
         }
     }
-    
+    #endregion
+
+    #region Attack Handling
     private void HandleAttackInput()
     {
         if (CanAttack())
@@ -62,14 +83,26 @@ public class PlayerCombat : CombatEntity
         lastAttackTime = Time.time;
         lastComboTime = Time.time;
         
+        // Stop movement nếu không cho phép move while attacking
+        if (!canMoveWhileAttacking && playerController != null)
+        {
+            // Movement sẽ tự động slow down trong PlayerController khi isAttacking = true
+        }
+        
         // Trigger animation với combo step
-        animator.SetInteger("ComboStep", currentComboStep);
-        animator.SetTrigger("Attack");
+        if (animator != null)
+        {
+            animator.SetInteger(comboStepHash, currentComboStep);
+            animator.SetTrigger(attackHash);
+        }
         
         // Tăng combo step
         currentComboStep = (currentComboStep + 1) % 3; // 3 hit combo
+        
+        // Play attack sound
+        // AudioManager.Instance?.PlaySound("PlayerAttack");
     }
-    
+
     public override void PerformAttack(IDamageable target)
     {
         // Được gọi từ Animation Event
@@ -81,10 +114,15 @@ public class PlayerCombat : CombatEntity
         // Trigger hit effects
         VFXManager.Instance?.PlayHitEffect(damageInfo.hitPoint, damageInfo.isCritical);
         
-        // Play sound (if you have AudioManager)
-        // AudioManager.Instance?.PlaySound("PlayerAttack");
+        // Play hit sound
+        // AudioManager.Instance?.PlaySound("Hit");
+        
+        // Camera shake (if you have camera shake system)
+        // CameraShaker.Instance?.Shake(0.1f, 0.2f);
     }
-    
+    #endregion
+
+    #region Damage Detection
     // Animation Event - gọi khi weapon swing animation đến điểm hit
     public void OnWeaponHit()
     {
@@ -93,8 +131,11 @@ public class PlayerCombat : CombatEntity
     
     private void DetectAndDamageEnemies()
     {
+        // Sphere cast from player forward
+        Vector3 attackPosition = transform.position + transform.forward * 1.5f + Vector3.up;
+        
         Collider[] hits = Physics.OverlapSphere(
-            transform.position + transform.forward * 1.5f,
+            attackPosition,
             AttackRange,
             enemyLayer
         );
@@ -111,18 +152,23 @@ public class PlayerCombat : CombatEntity
                 if (angle < 90f) // Attack cone 180 degrees
                 {
                     PerformAttack(enemy);
+                    
+                    // Hit stop effect (optional)
+                    // StartCoroutine(HitStop(0.05f));
                 }
             }
         }
     }
-    
+
     private DamageInfo CreateDamageInfo()
     {
         bool isCrit = Random.Range(0f, 100f) < currentStats.GetFinalStat(StatType.CriticalChance);
         
+        float finalDamage = AttackDamage;
+        
         return new DamageInfo
         {
-            physicalDamage = AttackDamage,
+            physicalDamage = finalDamage,
             magicalDamage = 0f,
             damageType = DamageInfo.DamageType.Physical,
             attacker = gameObject,
@@ -138,13 +184,17 @@ public class PlayerCombat : CombatEntity
     {
         isAttacking = false;
     }
-    
+    #endregion
+
+    #region Skills
     private void UseSkill(int skillIndex)
     {
-        // TODO: Implement skill system later
+        // TODO: Implement skill system
         Debug.Log($"Skill {skillIndex} pressed - Not implemented yet");
     }
-    
+    #endregion
+
+    #region Weapon Management
     public void EquipWeapon(Weapon weapon)
     {
         if (currentWeapon != null)
@@ -156,9 +206,44 @@ public class PlayerCombat : CombatEntity
         currentWeapon.transform.localPosition = Vector3.zero;
         currentWeapon.transform.localRotation = Quaternion.identity;
     }
-    
+
     public Weapon GetCurrentWeapon()
     {
         return currentWeapon;
     }
+    #endregion
+
+    #region Invulnerability
+    public void SetInvulnerable(bool value)
+    {
+        isInvulnerable = value;
+    }
+    #endregion
+
+    #region Debug & Effects
+    private void OnDrawGizmosSelected()
+    {
+        if (!Application.isPlaying) return;
+        
+        // Attack range sphere
+        Gizmos.color = Color.red;
+        Vector3 attackPosition = transform.position + transform.forward * 1.5f + Vector3.up;
+        Gizmos.DrawWireSphere(attackPosition, AttackRange);
+        
+        // Attack cone
+        Gizmos.color = Color.yellow;
+        Vector3 leftBoundary = Quaternion.Euler(0, -90, 0) * transform.forward;
+        Vector3 rightBoundary = Quaternion.Euler(0, 90, 0) * transform.forward;
+        Gizmos.DrawRay(transform.position, leftBoundary * AttackRange);
+        Gizmos.DrawRay(transform.position, rightBoundary * AttackRange);
+    }
+    
+    // Optional: Hit stop effect for better game feel
+    private System.Collections.IEnumerator HitStop(float duration)
+    {
+        Time.timeScale = 0.1f;
+        yield return new WaitForSecondsRealtime(duration);
+        Time.timeScale = 1f;
+    }
+    #endregion
 }

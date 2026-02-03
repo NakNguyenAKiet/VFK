@@ -4,13 +4,18 @@ using System.Collections.Generic;
 
 public class DamageNumberManager : MonoBehaviour
 {
+    #region Singleton
     public static DamageNumberManager Instance { get; private set; }
+    #endregion
     
+    #region Settings
     [Header("Prefabs")]
     [SerializeField] private GameObject damageNumberPrefab;
     
-    [Header("Settings")]
+    [Header("Pool Settings")]
     [SerializeField] private int poolSize = 50;
+    
+    [Header("Timing")]
     [SerializeField] private float normalDuration = 1f;
     [SerializeField] private float criticalDuration = 1.5f;
     
@@ -24,11 +29,18 @@ public class DamageNumberManager : MonoBehaviour
     [Header("Movement")]
     [SerializeField] private float floatSpeed = 2f;
     [SerializeField] private float randomOffsetRange = 0.5f;
-    
+    #endregion
+
+    #region Components
+    private Camera mainCamera;
+    #endregion
+
+    #region Object Pool
     private Queue<DamageNumber> damageNumberPool = new Queue<DamageNumber>();
     private List<DamageNumber> activeDamageNumbers = new List<DamageNumber>();
-    private Camera mainCamera;
-    
+    #endregion
+
+    #region Lifecycle
     private void Awake()
     {
         if (Instance == null)
@@ -44,7 +56,24 @@ public class DamageNumberManager : MonoBehaviour
         mainCamera = Camera.main;
         InitializePool();
     }
-    
+
+    private void Update()
+    {
+        // Update positions để luôn face camera
+        for (int i = activeDamageNumbers.Count - 1; i >= 0; i--)
+        {
+            if (activeDamageNumbers[i].gameObject.activeSelf)
+            {
+                activeDamageNumbers[i].transform.LookAt(
+                    activeDamageNumbers[i].transform.position + mainCamera.transform.rotation * Vector3.forward,
+                    mainCamera.transform.rotation * Vector3.up
+                );
+            }
+        }
+    }
+    #endregion
+
+    #region Pool Management
     private void InitializePool()
     {
         for (int i = 0; i < poolSize; i++)
@@ -69,6 +98,25 @@ public class DamageNumberManager : MonoBehaviour
         return damageNum;
     }
     
+    private DamageNumber GetDamageNumber()
+    {
+        if (damageNumberPool.Count == 0)
+        {
+            return CreateDamageNumber();
+        }
+        
+        return damageNumberPool.Dequeue();
+    }
+    
+    public void ReturnDamageNumber(DamageNumber damageNum)
+    {
+        damageNum.gameObject.SetActive(false);
+        activeDamageNumbers.Remove(damageNum);
+        damageNumberPool.Enqueue(damageNum);
+    }
+    #endregion
+
+    #region Damage Display
     public void ShowDamage(Vector3 worldPosition, float damage, bool isCritical = false)
     {
         DamageNumber damageNum = GetDamageNumber();
@@ -91,7 +139,9 @@ public class DamageNumberManager : MonoBehaviour
         
         activeDamageNumbers.Add(damageNum);
     }
-    
+    #endregion
+
+    #region Healing Display
     public void ShowHealing(Vector3 worldPosition, float healAmount)
     {
         DamageNumber damageNum = GetDamageNumber();
@@ -114,37 +164,6 @@ public class DamageNumberManager : MonoBehaviour
         
         activeDamageNumbers.Add(damageNum);
     }
-    
-    private DamageNumber GetDamageNumber()
-    {
-        if (damageNumberPool.Count == 0)
-        {
-            return CreateDamageNumber();
-        }
-        
-        return damageNumberPool.Dequeue();
-    }
-    
-    public void ReturnDamageNumber(DamageNumber damageNum)
-    {
-        damageNum.gameObject.SetActive(false);
-        activeDamageNumbers.Remove(damageNum);
-        damageNumberPool.Enqueue(damageNum);
-    }
-    
-    private void Update()
-    {
-        // Update positions để luôn face camera
-        for (int i = activeDamageNumbers.Count - 1; i >= 0; i--)
-        {
-            if (activeDamageNumbers[i].gameObject.activeSelf)
-            {
-                activeDamageNumbers[i].transform.LookAt(
-                    activeDamageNumbers[i].transform.position + mainCamera.transform.rotation * Vector3.forward,
-                    mainCamera.transform.rotation * Vector3.up
-                );
-            }
-        }
-    }
+    #endregion
 }
 
