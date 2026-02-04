@@ -1,6 +1,9 @@
 using UnityEngine;
 using UnityEngine.AI;
 
+/// <summary>
+/// Simplified Enemy AI - Only 4 states: Idle, Chase, Attack, Dead
+/// </summary>
 public class EnemyAI : MonoBehaviour
 {
     #region Settings
@@ -8,45 +11,34 @@ public class EnemyAI : MonoBehaviour
     [SerializeField] private float detectionRange = 15f;
     [SerializeField] private float attackRange = 2f;
     [SerializeField] private float chaseSpeed = 3.5f;
-    [SerializeField] private float patrolSpeed = 2f;
+    private float idleSpeed = 0f;
     [SerializeField] private float rotationSpeed = 5f;
     
-    [Header("Patrol Settings")]
-    [SerializeField] private bool shouldPatrol = true;
-    [SerializeField] private float patrolRadius = 10f;
-    [SerializeField] private float waypointWaitTime = 2f;
-    
-    [Header("Combat Settings")]
-    [SerializeField] private float retreatDistance = 8f;
-    [SerializeField] private float strafeSpeed = 2f;
-    [SerializeField] private bool canStrafe = false;
+    [Header("Idle Behavior")]
+    [SerializeField] private bool wanderWhenIdle = false;
+    [SerializeField] private float wanderRadius = 5f;
+    [SerializeField] private float wanderWaitTime = 3f;
     #endregion
 
     #region Components
-    private NavMeshAgent agent;
-    private Animator animator;
-    private EnemyCombat combat;
+    [SerializeField] private NavMeshAgent agent;
+    [SerializeField] private Animator animator;
+    [SerializeField] private EnemyCombat enemyCombat;
     #endregion
 
     #region State
     private AIState currentState = AIState.Idle;
     private Transform target;
-    private Vector3 startPosition;
-    private Vector3 currentWaypoint;
-    private float waypointTimer;
-    private float lastStateChangeTime;
-    private float strafeDirection = 1f;
+    private Vector3 spawnPosition;
+    private float stateTimer;
     #endregion
 
     #region AI State Enum
     public enum AIState
     {
         Idle,
-        Patrol,
         Chase,
         Attack,
-        Retreat,
-        Strafe,
         Dead
     }
     #endregion
@@ -56,38 +48,37 @@ public class EnemyAI : MonoBehaviour
     public AIState CurrentState => currentState;
     #endregion
 
+    #region Animation Parameters
+    private readonly int speedHash = Animator.StringToHash("Speed");
+    private readonly int attackHash = Animator.StringToHash("Attack");
+    private readonly int hitHash = Animator.StringToHash("Hit");
+    private readonly int deathHash = Animator.StringToHash("Death");
+    #endregion
+
     #region Lifecycle
     private void Awake()
     {
         agent = GetComponent<NavMeshAgent>();
-        animator = GetComponent<Animator>();
-        combat = GetComponent<EnemyCombat>();
+        animator = GetComponentInChildren<Animator>();
+        enemyCombat = GetComponent<EnemyCombat>();
         
-        startPosition = transform.position;
+        spawnPosition = transform.position;
     }
     
     private void Start()
     {
         if (agent != null)
         {
-            agent.speed = patrolSpeed;
+            agent.speed = idleSpeed;
         }
         
-        if (shouldPatrol)
-        {
-            ChangeState(AIState.Patrol);
-            SetNewPatrolWaypoint();
-        }
-        else
-        {
-            ChangeState(AIState.Idle);
-        }
+        ChangeState(AIState.Idle);
         
         // Subscribe to combat events
-        if (combat != null)
+        if (enemyCombat != null)
         {
-            combat.OnDeath += () => ChangeState(AIState.Dead);
-            combat.OnDamageReceived += (damageInfo) => OnDamageTaken(damageInfo);
+            enemyCombat.OnDeath += HandleDeath;
+            enemyCombat.OnDamageReceived += HandleDamageTaken;
         }
     }
     
@@ -95,33 +86,24 @@ public class EnemyAI : MonoBehaviour
     {
         if (currentState == AIState.Dead) return;
         
-        UpdateState();
-        UpdateAnimator();
+        stateTimer += Time.deltaTime;
+        UpdateCurrentState();
     }
     #endregion
 
     #region State Management
-    private void UpdateState()
+    private void UpdateCurrentState()
     {
         switch (currentState)
         {
             case AIState.Idle:
                 UpdateIdle();
                 break;
-            case AIState.Patrol:
-                UpdatePatrol();
-                break;
             case AIState.Chase:
                 UpdateChase();
                 break;
             case AIState.Attack:
                 UpdateAttack();
-                break;
-            case AIState.Retreat:
-                UpdateRetreat();
-                break;
-            case AIState.Strafe:
-                UpdateStrafe();
                 break;
         }
     }
@@ -131,144 +113,92 @@ public class EnemyAI : MonoBehaviour
         if (currentState == newState) return;
         
         // Exit current state
-        OnStateExit(currentState);
+        ExitState(currentState);
         
+        // Change state
         currentState = newState;
-        lastStateChangeTime = Time.time;
+        stateTimer = 0f;
         
         // Enter new state
-        OnStateEnter(newState);
+        EnterState(newState);
     }
 
-    private void OnStateEnter(AIState state)
+    private void EnterState(AIState state)
     {
+        if (!agent.enabled) return;
+        Debug.Log($"EnemyAI: Entering state {state}");
         switch (state)
         {
             case AIState.Idle:
-                if (agent.enabled)
-                {
-                    agent.isStopped = true;
-                    agent.speed = patrolSpeed;
-                }
-                break;
-                
-            case AIState.Patrol:
-                if (agent.enabled)
-                {
-                    agent.isStopped = false;
-                    agent.speed = patrolSpeed;
-                }
+                agent.isStopped = true;
+                agent.speed = idleSpeed;
                 break;
                 
             case AIState.Chase:
-                if (agent.enabled)
-                {
-                    agent.isStopped = false;
-                    agent.speed = chaseSpeed;
-                }
+                agent.isStopped = false;
+                agent.speed = chaseSpeed;
                 break;
                 
             case AIState.Attack:
-                if (agent.enabled)
-                {
-                    agent.isStopped = true;
-                }
-                break;
-                
-            case AIState.Retreat:
-                if (agent.enabled)
-                {
-                    agent.isStopped = false;
-                    agent.speed = chaseSpeed * 1.2f;
-                }
+                agent.isStopped = true;
+                agent.speed = idleSpeed;
                 break;
                 
             case AIState.Dead:
-                if (agent.enabled)
-                {
-                    agent.isStopped = true;
-                    agent.enabled = false;
-                }
+                agent.isStopped = true;
+                agent.enabled = false;
                 enabled = false;
+                
+                if (animator != null)
+                {
+                    animator.SetTrigger(deathHash);
+                }
                 break;
         }
+        UpdateMoveAnim();
     }
 
-    private void OnStateExit(AIState state)
+    private void ExitState(AIState state)
     {
-        // Cleanup khi exit state nếu cần
+        // Cleanup nếu cần
     }
     #endregion
 
     #region Idle State
     private void UpdateIdle()
     {
-        // Look for target
+        // Detect player
         if (DetectTarget())
         {
             ChangeState(AIState.Chase);
             return;
         }
-        
-        // Return to patrol if enabled
-        if (shouldPatrol && Time.time - lastStateChangeTime > waypointWaitTime)
-        {
-            ChangeState(AIState.Patrol);
-        }
-    }
-    #endregion
-
-    #region Patrol State
-    private void UpdatePatrol()
-    {
-        if (DetectTarget())
-        {
-            ChangeState(AIState.Chase);
-            return;
-        }
-        
-        if (agent.enabled && !agent.pathPending && agent.remainingDistance < 0.5f)
-        {
-            waypointTimer += Time.deltaTime;
-            
-            if (waypointTimer >= waypointWaitTime)
-            {
-                SetNewPatrolWaypoint();
-                waypointTimer = 0f;
-            }
-        }
     }
 
-    private void SetNewPatrolWaypoint()
-    {
-        Vector2 randomCircle = Random.insideUnitCircle * patrolRadius;
-        Vector3 randomPoint = startPosition + new Vector3(randomCircle.x, 0, randomCircle.y);
-        
-        NavMeshHit hit;
-        if (NavMesh.SamplePosition(randomPoint, out hit, patrolRadius, NavMesh.AllAreas))
-        {
-            currentWaypoint = hit.position;
-            
-            if (agent.enabled)
-            {
-                agent.SetDestination(currentWaypoint);
-            }
-        }
-    }
     #endregion
 
     #region Chase State
     private void UpdateChase()
     {
-        if (target == null || combat.IsDead)
+        // Lost target
+        if (target == null)
         {
+            ChangeState(AIState.Idle);
+            return;
+        }
+        
+        // Check if target is dead
+        IDamageable targetDamageable = target.GetComponent<IDamageable>();
+        if (targetDamageable != null && targetDamageable.IsDead)
+        {
+            target = null;
             ChangeState(AIState.Idle);
             return;
         }
         
         float distanceToTarget = Vector3.Distance(transform.position, target.position);
         
-        // Kiểm tra target ra khỏi detection range
+        // Target too far, give up chase
         if (distanceToTarget > detectionRange * 1.5f)
         {
             target = null;
@@ -276,15 +206,15 @@ public class EnemyAI : MonoBehaviour
             return;
         }
         
-        // Chuyển sang attack khi đủ gần
+        // Close enough to attack
         if (distanceToTarget <= attackRange)
         {
             ChangeState(AIState.Attack);
             return;
         }
         
-        // Chase target
-        if (agent.enabled)
+        // Continue chasing
+        if (agent.enabled && !agent.pathPending)
         {
             agent.SetDestination(target.position);
         }
@@ -297,110 +227,41 @@ public class EnemyAI : MonoBehaviour
     #region Attack State
     private void UpdateAttack()
     {
-        if (target == null || combat.IsDead)
-        {
-            ChangeState(AIState.Idle);
-            return;
-        }
-        
-        float distanceToTarget = Vector3.Distance(transform.position, target.position);
-        
-        // Target đi xa quá, quay lại chase
-        if (distanceToTarget > attackRange * 1.5f)
-        {
-            ChangeState(AIState.Chase);
-            return;
-        }
-        
-        // Dừng di chuyển
-        if (agent.enabled)
-        {
-            agent.isStopped = true;
-        }
-        
-        // Quay về phía target
-        RotateTowards(target.position);
-        
-        // Strafe nếu được phép và target quá gần
-        if (canStrafe && distanceToTarget < attackRange * 0.7f)
-        {
-            ChangeState(AIState.Strafe);
-        }
-    }
-    #endregion
-
-    #region Retreat State
-    private void UpdateRetreat()
-    {
+        // Lost target
         if (target == null)
         {
             ChangeState(AIState.Idle);
             return;
         }
         
-        float distanceToTarget = Vector3.Distance(transform.position, target.position);
-        
-        // Đã retreat đủ xa
-        if (distanceToTarget >= retreatDistance)
+        // Check if target is dead
+        IDamageable targetDamageable = target.GetComponent<IDamageable>();
+        if (targetDamageable != null && targetDamageable.IsDead)
         {
-            ChangeState(AIState.Chase);
-            return;
-        }
-        
-        // Move away from target
-        Vector3 retreatDirection = (transform.position - target.position).normalized;
-        Vector3 retreatPosition = transform.position + retreatDirection * 5f;
-        
-        if (agent.enabled)
-        {
-            agent.SetDestination(retreatPosition);
-        }
-        
-        RotateTowards(target.position);
-    }
-    #endregion
-
-    #region Strafe State
-    private void UpdateStrafe()
-    {
-        if (target == null || combat.IsDead)
-        {
+            target = null;
             ChangeState(AIState.Idle);
             return;
         }
         
         float distanceToTarget = Vector3.Distance(transform.position, target.position);
         
-        // Quá xa, quay lại chase
-        if (distanceToTarget > attackRange * 1.2f)
+        // Target moved away, chase again
+        if (distanceToTarget > attackRange)
         {
             ChangeState(AIState.Chase);
             return;
         }
         
-        // Strafe around target
-        Vector3 directionToTarget = (target.position - transform.position).normalized;
-        Vector3 strafeRight = Vector3.Cross(Vector3.up, directionToTarget);
-        Vector3 strafePosition = transform.position + strafeRight * strafeDirection * strafeSpeed * Time.deltaTime;
-        
+        // Stop and face target
         if (agent.enabled)
         {
-            agent.Move(strafeRight * strafeDirection * strafeSpeed * Time.deltaTime);
+            agent.isStopped = true;
         }
         
-        // Đổi hướng strafe ngẫu nhiên
-        if (Random.value < 0.02f)
-        {
-            strafeDirection *= -1f;
-        }
-        
+        // Always face target when attacking
         RotateTowards(target.position);
         
-        // Quay lại attack sau một lúc
-        if (Time.time - lastStateChangeTime > 3f)
-        {
-            ChangeState(AIState.Attack);
-        }
+        enemyCombat?.TryAttackTarget();
     }
     #endregion
 
@@ -413,10 +274,11 @@ public class EnemyAI : MonoBehaviour
         {
             if (hit.CompareTag("Player"))
             {
-                // Raycast check line of sight
+                // Line of sight check
                 Vector3 directionToTarget = (hit.transform.position - transform.position).normalized;
+                Vector3 rayStart = transform.position + Vector3.up;
                 
-                if (Physics.Raycast(transform.position + Vector3.up, directionToTarget, out RaycastHit rayHit, detectionRange))
+                if (Physics.Raycast(rayStart, directionToTarget, out RaycastHit rayHit, detectionRange))
                 {
                     if (rayHit.collider.CompareTag("Player"))
                     {
@@ -440,35 +302,33 @@ public class EnemyAI : MonoBehaviour
         if (direction != Vector3.zero)
         {
             Quaternion targetRotation = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation, 
+                targetRotation, 
+                rotationSpeed * Time.deltaTime
+            );
         }
     }
     #endregion
 
     #region Animation
-    private void UpdateAnimator()
+    private void UpdateMoveAnim()
     {
-        if (animator == null || !agent.enabled) return;
+        if (animator == null || !agent.enabled) return;       
         
-        float speed = agent.velocity.magnitude;
-        animator.SetFloat("Speed", speed);
-        animator.SetBool("IsAttacking", currentState == AIState.Attack);
+        animator.SetFloat(speedHash, agent.speed);
     }
     #endregion
 
-    #region Public Methods
-    public void SetTarget(Transform newTarget)
+    #region Event Handlers
+    private void HandleDeath()
     {
-        target = newTarget;
-        if (currentState == AIState.Idle || currentState == AIState.Patrol)
-        {
-            ChangeState(AIState.Chase);
-        }
+        ChangeState(AIState.Dead);
     }
 
-    private void OnDamageTaken(DamageInfo damageInfo)
+    private void HandleDamageTaken(DamageInfo damageInfo)
     {
-        // Phát hiện attacker nếu chưa có target
+        // If we don't have a target, acquire the attacker
         if (target == null && damageInfo.attacker != null)
         {
             Transform attackerTransform = damageInfo.attacker.transform;
@@ -478,39 +338,77 @@ public class EnemyAI : MonoBehaviour
             }
         }
         
-        // Random retreat nếu health thấp
-        if (combat.CurrentHealth < combat.MaxHealth * 0.3f && Random.value < 0.3f)
+        // Play hit animation if not already attacking
+        if (animator != null && currentState != AIState.Attack)
         {
-            ChangeState(AIState.Retreat);
+            animator.SetTrigger(hitHash);
         }
+    }
+    #endregion
+
+    #region Public Methods
+    public void SetTarget(Transform newTarget)
+    {
+        target = newTarget;
+        
+        // Immediately start chasing if idle
+        if (currentState == AIState.Idle)
+        {
+            ChangeState(AIState.Chase);
+        }
+    }
+
+    public float GetDistanceToTarget()
+    {
+        if (target == null) return float.MaxValue;
+        return Vector3.Distance(transform.position, target.position);
+    }
+
+    public bool HasTarget()
+    {
+        return target != null;
+    }
+
+    public bool IsInAttackRange()
+    {
+        return GetDistanceToTarget() <= attackRange;
     }
     #endregion
 
     #region Debug
     private void OnDrawGizmosSelected()
     {
-        // Detection range
+        // Detection range (yellow)
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRange);
         
-        // Attack range
+        // Attack range (red)
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, attackRange);
         
-        // Patrol radius
-        if (shouldPatrol)
+        // Wander radius when idle (blue)
+        if (wanderWhenIdle)
         {
             Gizmos.color = Color.blue;
-            Vector3 patrolCenter = Application.isPlaying ? startPosition : transform.position;
-            Gizmos.DrawWireSphere(patrolCenter, patrolRadius);
+            Vector3 center = Application.isPlaying ? spawnPosition : transform.position;
+            Gizmos.DrawWireSphere(center, wanderRadius);
         }
         
-        // Current waypoint
-        if (Application.isPlaying && currentState == AIState.Patrol)
+        // Line to target (green)
+        if (Application.isPlaying && target != null)
         {
             Gizmos.color = Color.green;
-            Gizmos.DrawSphere(currentWaypoint, 0.5f);
-            Gizmos.DrawLine(transform.position, currentWaypoint);
+            Gizmos.DrawLine(transform.position + Vector3.up, target.position + Vector3.up);
+        }
+        
+        // Current state indicator
+        if (Application.isPlaying)
+        {
+            Vector3 textPos = transform.position + Vector3.up * 2.5f;
+            
+            #if UNITY_EDITOR
+            UnityEditor.Handles.Label(textPos, $"State: {currentState}");
+            #endif
         }
     }
     #endregion

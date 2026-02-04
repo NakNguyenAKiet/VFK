@@ -164,6 +164,7 @@ PlayerSettings:
   androidMinAspectRatio: 1
   applicationIdentifier:
     Android: com.DefaultCompany.TonadoVFX
+    Standalone: com.DefaultCompany.TonadoVFX
   buildNumber:
     Bratwurst: 0
     Standalone: 0

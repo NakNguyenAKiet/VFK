@@ -10,7 +10,7 @@ public class EnemyCombat : CombatEntity
     #endregion
 
     #region Components
-    private EnemyAI aiController;
+    private EnemyAI enemyAI;
     #endregion
 
     #region Combat State
@@ -37,66 +37,40 @@ public class EnemyCombat : CombatEntity
     protected override void Awake()
     {
         base.Awake();
-        aiController = GetComponent<EnemyAI>();
+        enemyAI = GetComponent<EnemyAI>();
         
         // Scale stats theo enemy type
         ApplyEnemyTypeModifiers();
     }
     
-    protected override void Update()
-    {
-        base.Update();
-        
-        if (isDead) return;
-        
-        if (target == null)
-        {
-            FindTarget();
-        }
-        else
-        {
-            float distanceToTarget = Vector3.Distance(transform.position, target.position);
-            
-            if (distanceToTarget <= AttackRange && Time.time >= nextAttackTime)
-            {
-                TryAttackTarget();
-            }
-        }
-    }
-    #endregion
-
-    #region Target Detection
-    private void FindTarget()
-    {
-        // Tìm player trong range
-        Collider[] hits = Physics.OverlapSphere(transform.position, detectionRange);
-        
-        foreach (Collider hit in hits)
-        {
-            if (hit.CompareTag("Player"))
-            {
-                target = hit.transform;
-                aiController.SetTarget(target);
-                break;
-            }
-        }
-    }
     #endregion
 
     #region Attack Handling
-    private void TryAttackTarget()
+    public void TryAttackTarget()
     {
+        if (Time.time < nextAttackTime || !enemyAI.HasTarget()) return;
         if (!CanAttack()) return;
+        if (enemyAI == null || !enemyAI.HasTarget()) return;
         
+        Transform target = enemyAI.Target;
+        if (target == null) return;
+        
+        // Check if target is in range
+        float distance = Vector3.Distance(transform.position, target.position);
+        if (distance > AttackRange) return;
+        
+        // Check if target is damageable and alive
         IDamageable targetDamageable = target.GetComponent<IDamageable>();
-        if (targetDamageable != null && !targetDamageable.IsDead)
-        {
-            PerformAttack(targetDamageable);
-        }
+        if (targetDamageable == null || targetDamageable.IsDead) return;
+        
+        // Perform attack
+        PerformAttack(targetDamageable);
     }
     
     public override void PerformAttack(IDamageable target)
     {
+        if (target == null || target.IsDead) return;
+        
         isAttacking = true;
         lastAttackTime = Time.time;
         nextAttackTime = Time.time + attackCooldown;
@@ -105,8 +79,18 @@ public class EnemyCombat : CombatEntity
         Vector3 direction = (target.transform.position - transform.position).normalized;
         transform.rotation = Quaternion.LookRotation(new Vector3(direction.x, 0, direction.z));
         
-        // Animation
-        animator.SetTrigger("Attack");
+        // Trigger attack animation
+        if (animator != null)
+        {
+            animator.SetTrigger(attackHash);
+        }
+
+        if (attackCoroutine != null)
+            StopCoroutine(attackCoroutine);
+
+        attackCoroutine = StartCoroutine(AttackTimer());
+
+        OnMeleeHit();
     }
     
     // Animation Event cho melee attack

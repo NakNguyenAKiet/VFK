@@ -1,4 +1,5 @@
 
+using System.Collections;
 using UnityEngine;
 
 public abstract class CombatEntity : MonoBehaviour, IDamageable, IAttacker
@@ -14,6 +15,8 @@ public abstract class CombatEntity : MonoBehaviour, IDamageable, IAttacker
     protected bool isAttacking = false;
     protected bool isInvulnerable = false;
     protected float lastAttackTime;
+    protected Coroutine attackCoroutine;
+
     #endregion
 
     #region Current Stats
@@ -21,9 +24,9 @@ public abstract class CombatEntity : MonoBehaviour, IDamageable, IAttacker
     #endregion
 
     #region Components
+    [SerializeField]
     protected Animator animator;
     protected Rigidbody rb;
-    protected CapsuleCollider capsuleCollider;
     #endregion
 
     #region Events
@@ -39,6 +42,12 @@ public abstract class CombatEntity : MonoBehaviour, IDamageable, IAttacker
     public float AttackSpeed => currentStats.GetFinalStat(StatType.AttackSpeed);
     public abstract float AttackRange { get; }
     public bool IsDead => isDead;
+
+    #endregion
+
+    #region Animation Parameters
+    protected readonly int comboStepHash = Animator.StringToHash("ComboStep");
+    protected readonly int attackHash = Animator.StringToHash("Attack");
     #endregion
 
     #region Lifecycle
@@ -46,7 +55,6 @@ public abstract class CombatEntity : MonoBehaviour, IDamageable, IAttacker
     {
         animator = GetComponentInChildren<Animator>();
         rb = GetComponent<Rigidbody>();
-        capsuleCollider = GetComponent<CapsuleCollider>();
         
         // Clone stats để tránh modify ScriptableObject gốc
         currentStats = CloneStats(baseStats);
@@ -129,8 +137,13 @@ public abstract class CombatEntity : MonoBehaviour, IDamageable, IAttacker
     protected bool CanAttack()
     {
         return !isDead && 
-               !isAttacking && 
-               Time.time >= lastAttackTime + (1f / AttackSpeed);
+               !isAttacking;
+    }
+    protected IEnumerator AttackTimer()
+    {
+        yield return new WaitForSeconds(1f);
+        isAttacking = false;
+        attackCoroutine = null;
     }
     #endregion
 
@@ -146,7 +159,6 @@ public abstract class CombatEntity : MonoBehaviour, IDamageable, IAttacker
         
         // Disable combat
         enabled = false;
-        capsuleCollider.enabled = false;
     }
     #endregion
 

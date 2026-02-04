@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class PlayerCombat : CombatEntity
@@ -18,13 +19,12 @@ public class PlayerCombat : CombatEntity
     #region Combat State
     private int currentComboStep = 0;
     private float lastComboTime;
+    
+    [SerializeField]
     private Weapon currentWeapon;
     #endregion
 
-    #region Animation Parameters
-    private readonly int comboStepHash = Animator.StringToHash("ComboStep");
-    private readonly int attackHash = Animator.StringToHash("Attack");
-    #endregion
+
 
     #region Properties
     public override float AttackRange => currentWeapon != null ? currentWeapon.attackRange : 2f;
@@ -65,14 +65,6 @@ public class PlayerCombat : CombatEntity
     #region Attack Handling
     private void HandleAttackInput()
     {
-        if (CanAttack())
-        {
-            PerformComboAttack();
-        }
-    }
-    
-    private void PerformComboAttack()
-    {
         // Reset combo nếu quá lâu
         if (Time.time - lastComboTime > comboResetTime)
         {
@@ -99,6 +91,10 @@ public class PlayerCombat : CombatEntity
         // Tăng combo step
         currentComboStep = (currentComboStep + 1) % 3; // 3 hit combo
         
+        if (attackCoroutine != null)
+            StopCoroutine(attackCoroutine);
+
+        attackCoroutine = StartCoroutine(AttackTimer());
         // Play attack sound
         // AudioManager.Instance?.PlaySound("PlayerAttack");
     }
@@ -113,12 +109,6 @@ public class PlayerCombat : CombatEntity
         
         // Trigger hit effects
         VFXManager.Instance?.PlayHitEffect(damageInfo.hitPoint, damageInfo.isCritical);
-        
-        // Play hit sound
-        // AudioManager.Instance?.PlaySound("Hit");
-        
-        // Camera shake (if you have camera shake system)
-        // CameraShaker.Instance?.Shake(0.1f, 0.2f);
     }
     #endregion
 
@@ -190,7 +180,6 @@ public class PlayerCombat : CombatEntity
     private void UseSkill(int skillIndex)
     {
         // TODO: Implement skill system
-        Debug.Log($"Skill {skillIndex} pressed - Not implemented yet");
     }
     #endregion
 

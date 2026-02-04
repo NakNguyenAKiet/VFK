@@ -11,9 +11,7 @@ public class PlayerInput : MonoBehaviour
     [Header("Input Settings")]
     [SerializeField] private bool enableMouseAndKeyboard = true;
     [SerializeField] private bool enableGamepad = true;
-    
-    [Header("Mouse Settings")]
-    [SerializeField] private float mouseSensitivity = 2f;
+    [SerializeField] private Animator animator;
     #endregion
 
     #region Properties
@@ -21,6 +19,7 @@ public class PlayerInput : MonoBehaviour
     public Vector2 MoveInput { get; private set; }
     // Combat
     public bool IsAttacking { get; private set; }
+
     #endregion
 
     #region Events
@@ -36,9 +35,14 @@ public class PlayerInput : MonoBehaviour
     private PlayerInputActions inputActions;
     #endregion
 
+    #region Animation Parameters
+    private readonly string speedParam = "Speed";
+    #endregion
+
     #region Lifecycle
     private void Awake()
     {
+        animator = GetComponentInChildren<Animator>();
         inputActions = new PlayerInputActions();
     }
     
@@ -57,7 +61,10 @@ public class PlayerInput : MonoBehaviour
         inputActions.Player.Skill2.performed += ctx => OnSkill2Pressed?.Invoke();
         inputActions.Player.Skill3.performed += ctx => OnSkill3Pressed?.Invoke();
     }
-    
+    void Update()
+    {
+        UpdateAnimator();       
+    }
     private void OnDisable()
     {
         inputActions.Disable();
@@ -111,6 +118,14 @@ public class PlayerInput : MonoBehaviour
     }
     #endregion
 
+    #region Animation
+    private void UpdateAnimator()
+    {
+        if (animator == null) return;
+        
+        animator.SetFloat(speedParam, MoveInput.magnitude);
+    }
+    #endregion
     #region Input Control
     public void EnableInput()
     {
