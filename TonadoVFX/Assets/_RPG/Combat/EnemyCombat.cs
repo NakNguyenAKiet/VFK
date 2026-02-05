@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class EnemyCombat : CombatEntity
@@ -14,7 +16,6 @@ public class EnemyCombat : CombatEntity
     #endregion
 
     #region Combat State
-    private Transform target;
     private float nextAttackTime;
     #endregion
 
@@ -30,7 +31,7 @@ public class EnemyCombat : CombatEntity
     #endregion
 
     #region Properties
-    public override float AttackRange => enemyType == EnemyType.Melee ? 2f : 8f;
+    public override float AttackRange => enemyAI.AttackRange;
     #endregion
 
     #region Lifecycle
@@ -90,18 +91,18 @@ public class EnemyCombat : CombatEntity
 
         attackCoroutine = StartCoroutine(AttackTimer());
 
-        OnMeleeHit();
+        OnMeleeHit(target);
     }
     
     // Animation Event cho melee attack
-    public void OnMeleeHit()
+    public async void OnMeleeHit(IDamageable target)
     {
         if (target == null) return;
         
-        float distanceToTarget = Vector3.Distance(transform.position, target.position);
+        float distanceToTarget = Vector3.Distance(transform.position, target.transform.position);
         if (distanceToTarget <= AttackRange)
         {
-            IDamageable targetDamageable = target.GetComponent<IDamageable>();
+            IDamageable targetDamageable = target;
             if (targetDamageable != null)
             {
                 DamageInfo damageInfo = new DamageInfo
@@ -109,10 +110,10 @@ public class EnemyCombat : CombatEntity
                     physicalDamage = AttackDamage,
                     damageType = DamageInfo.DamageType.Physical,
                     attacker = gameObject,
-                    hitPoint = target.position,
-                    hitDirection = (target.position - transform.position).normalized
+                    hitPoint = target.transform.position,
+                    hitDirection = (target.transform.position - transform.position).normalized
                 };
-                
+                await UniTask.WaitForSeconds(0.5f);
                 targetDamageable.TakeDamage(damageInfo);
             }
         }

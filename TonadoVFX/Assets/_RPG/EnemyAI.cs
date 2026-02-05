@@ -46,6 +46,8 @@ public class EnemyAI : MonoBehaviour
     #region Properties
     public Transform Target => target;
     public AIState CurrentState => currentState;
+
+    public float AttackRange { get => attackRange; set => attackRange = value; }
     #endregion
 
     #region Animation Parameters
@@ -77,7 +79,6 @@ public class EnemyAI : MonoBehaviour
         // Subscribe to combat events
         if (enemyCombat != null)
         {
-            enemyCombat.OnDeath += HandleDeath;
             enemyCombat.OnDamageReceived += HandleDamageTaken;
         }
     }
@@ -321,11 +322,6 @@ public class EnemyAI : MonoBehaviour
     #endregion
 
     #region Event Handlers
-    private void HandleDeath()
-    {
-        ChangeState(AIState.Dead);
-    }
-
     private void HandleDamageTaken(DamageInfo damageInfo)
     {
         // If we don't have a target, acquire the attacker

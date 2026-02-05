@@ -492,6 +492,7 @@ GameObject:
   - component: {fileID: 2733108611707997530}
   - component: {fileID: 6047991683368474915}
   - component: {fileID: 5528016410192195560}
+  - component: {fileID: 6346003899664019652}
   m_Layer: 0
   m_Name: Maria_sword
   m_TagString: Untagged
@@ -654,6 +655,27 @@ MonoBehaviour:
   attackRange: 2
   damageMultiplier: 1
   attackSpeedMultiplier: 1
+--- !u!65 &6346003899664019652
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1607572283797772235}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.66234636, y: 0.17977214, z: 1.0816312}
+  m_Center: {x: 1.0081406, y: 1.4344376, z: 0.41398036}
 --- !u!1 &1619671158559823450
 GameObject:
   m_ObjectHideFlags: 0

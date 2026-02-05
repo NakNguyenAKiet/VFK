@@ -3,6 +3,15 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "New Weapon", menuName = "ARPG/Weapon")]
 public class Weapon : MonoBehaviour
 {
+    public event System.Action<Collider> OnWeaponHit;
+    void OnTriggerEnter(Collider other)
+    {
+        if(other.CompareTag("Enemy"))
+        {
+            OnWeaponHit?.Invoke(other);
+            Debug.Log("Weapon hit: " + other.name);
+        }
+    }
     #region Weapon Type Enum
     public enum WeaponType
     {

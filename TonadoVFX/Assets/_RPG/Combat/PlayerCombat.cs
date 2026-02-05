@@ -7,8 +7,7 @@ public class PlayerCombat : CombatEntity
     [Header("Player Specific")]
     [SerializeField] private Transform weaponSocket;
     [SerializeField] private LayerMask enemyLayer;
-    [SerializeField] private float comboResetTime = 1f;
-    [SerializeField] private bool canMoveWhileAttacking = false;
+    private float comboResetTime = 1.5f;
     #endregion
 
     #region Components
@@ -24,8 +23,6 @@ public class PlayerCombat : CombatEntity
     private Weapon currentWeapon;
     #endregion
 
-
-
     #region Properties
     public override float AttackRange => currentWeapon != null ? currentWeapon.attackRange : 2f;
     public bool IsAttacking => isAttacking;
@@ -37,6 +34,7 @@ public class PlayerCombat : CombatEntity
         base.Awake();
         playerInput = GetComponent<PlayerInput>();
         playerController = GetComponent<PlayerController>();
+        currentWeapon.OnWeaponHit += OnWeaponHit;
     }
     
     private void Start()
@@ -65,6 +63,7 @@ public class PlayerCombat : CombatEntity
     #region Attack Handling
     private void HandleAttackInput()
     {
+        if(isAttacking) return;
         // Reset combo nếu quá lâu
         if (Time.time - lastComboTime > comboResetTime)
         {
@@ -74,12 +73,6 @@ public class PlayerCombat : CombatEntity
         isAttacking = true;
         lastAttackTime = Time.time;
         lastComboTime = Time.time;
-        
-        // Stop movement nếu không cho phép move while attacking
-        if (!canMoveWhileAttacking && playerController != null)
-        {
-            // Movement sẽ tự động slow down trong PlayerController khi isAttacking = true
-        }
         
         // Trigger animation với combo step
         if (animator != null)
@@ -95,8 +88,6 @@ public class PlayerCombat : CombatEntity
             StopCoroutine(attackCoroutine);
 
         attackCoroutine = StartCoroutine(AttackTimer());
-        // Play attack sound
-        // AudioManager.Instance?.PlaySound("PlayerAttack");
     }
 
     public override void PerformAttack(IDamageable target)
@@ -106,47 +97,23 @@ public class PlayerCombat : CombatEntity
         
         DamageInfo damageInfo = CreateDamageInfo();
         target.TakeDamage(damageInfo);
-        
-        // Trigger hit effects
-        VFXManager.Instance?.PlayHitEffect(damageInfo.hitPoint, damageInfo.isCritical);
     }
     #endregion
 
     #region Damage Detection
     // Animation Event - gọi khi weapon swing animation đến điểm hit
-    public void OnWeaponHit()
+    public void OnWeaponHit(Collider hit)
     {
-        DetectAndDamageEnemies();
+        if(isAttacking)
+            DetectAndDamageEnemies(hit);
     }
     
-    private void DetectAndDamageEnemies()
+    private void DetectAndDamageEnemies(Collider hit = null)
     {
-        // Sphere cast from player forward
-        Vector3 attackPosition = transform.position + transform.forward * 1.5f + Vector3.up;
-        
-        Collider[] hits = Physics.OverlapSphere(
-            attackPosition,
-            AttackRange,
-            enemyLayer
-        );
-        
-        foreach (Collider hit in hits)
+        IDamageable enemy = hit.GetComponent<IDamageable>();
+        if (enemy != null && !enemy.IsDead)
         {
-            IDamageable enemy = hit.GetComponent<IDamageable>();
-            if (enemy != null && !enemy.IsDead)
-            {
-                // Check nếu enemy ở phía trước player
-                Vector3 directionToEnemy = (hit.transform.position - transform.position).normalized;
-                float angle = Vector3.Angle(transform.forward, directionToEnemy);
-                
-                if (angle < 90f) // Attack cone 180 degrees
-                {
-                    PerformAttack(enemy);
-                    
-                    // Hit stop effect (optional)
-                    // StartCoroutine(HitStop(0.05f));
-                }
-            }
+            PerformAttack(enemy);
         }
     }
 
